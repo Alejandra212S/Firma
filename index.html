@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captura de firma</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+            display: grid;
+            place-items: center;
+            background: #f3f4f6;
+            color: #222;
+            font-family: Arial, sans-serif;
+        }
+
+        .contenedor {
+            width: min(100%, 560px);
+            padding: 24px;
+            text-align: center;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: 1.5rem;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            background: #fff;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .botones {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: 0;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button:focus-visible {
+            outline: 3px solid #222;
+            outline-offset: 2px;
+        }
+
+        .btn-limpiar {
+            background: #6b7280;
+        }
+
+        .btn-guardar {
+            background: #2563eb;
+        }
+
+        @media (max-width: 420px) {
+            body {
+                padding: 12px;
+            }
+
+            .contenedor {
+                padding: 16px;
+            }
+
+            .botones {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="contenedor">
+        <h1>Firme aquí</h1>
+        <canvas id="canvasFirma" width="500" height="250" aria-label="Área para dibujar la firma"></canvas>
+        <div class="botones">
+            <button class="btn-limpiar" id="btnLimpiar" type="button">Limpiar</button>
+            <button class="btn-guardar" id="btnGuardar" type="button">Guardar firma</button>
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('canvasFirma');
+        const ctx = canvas.getContext('2d');
+        const btnLimpiar = document.getElementById('btnLimpiar');
+        const btnGuardar = document.getElementById('btnGuardar');
+        let dibujando = false;
+
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        function obtenerCoordenadas(evento) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (evento.clientX - rect.left) * (canvas.width / rect.width),
+                y: (evento.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        canvas.addEventListener('pointerdown', (evento) => {
+            evento.preventDefault();
+            canvas.setPointerCapture(evento.pointerId);
+            dibujando = true;
+
+            const { x, y } = obtenerCoordenadas(evento);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        });
+
+        canvas.addEventListener('pointermove', (evento) => {
+            if (!dibujando) return;
+
+            const { x, y } = obtenerCoordenadas(evento);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        });
+
+        function terminarDibujo() {
+            dibujando = false;
+            ctx.closePath();
+        }
+
+        canvas.addEventListener('pointerup', terminarDibujo);
+        canvas.addEventListener('pointercancel', terminarDibujo);
+        canvas.addEventListener('lostpointercapture', terminarDibujo);
+
+        btnLimpiar.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        btnGuardar.addEventListener('click', () => {
+            const enlace = document.createElement('a');
+            enlace.href = canvas.toDataURL('image/png');
+            enlace.download = 'firma.png';
+            enlace.click();
+        });
+    </script>
+</body>
+</html>
