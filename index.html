@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Captura de firma</title>
+    <title>Entrega de EPP</title>
     <style>
         * {
             box-sizing: border-box;
@@ -21,19 +21,37 @@
         }
        
         .contenedor {
-            width: min(100%, 560px);
-            padding: 24px;
-            text-align: center;
+            width: min(200%, 560px);
+            padding: 50px;
             background: #fff;
-            border-radius: 8px;
+            border-radius: 50px; /* Bordes redondeados más pronunciados */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
             margin: 0 0 16px;
             font-size: 1.5rem;
+            text-align: center;
         }
-         /* El lienzo donde se dibuja */
+
+        .campo {
+            margin-bottom: 14px;
+        }
+
+        .campo label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .campo input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
 
         canvas {
             display: block;
@@ -44,6 +62,7 @@
             background: #fff;
             cursor: crosshair;
             touch-action: none;
+            margin-top: 10px;
         }
 
         .botones {
@@ -54,12 +73,14 @@
         }
 
         button {
-            padding: 10px 16px;
+            padding: 12px 20px;
             border: 0;
             border-radius: 4px;
             color: #fff;
             font-size: 1rem;
             cursor: pointer;
+            font-weight: bold;
+            flex: 1;
         }
 
         button:focus-visible {
@@ -92,12 +113,39 @@
 </head>
 <body>
     <main class="contenedor">
-        <h1>Firme aquí</h1>
-        <!-- Definimos el tamaño visual del lienzo -->
+        <h1>Entrega de EPP</h1>
+        
+        <div class="campo">
+            <label for="txtNomina">Número de Nómina </label>
+            <input type="text" id="txtNomina" placeholder="Ej: 202150">
+        </div>
+
+        <div class="campo">
+            <label for="txtNombre">Nombre Completo del Trabajador:</label>
+            <input type="text" id="txtNombre" placeholder="Nombre completo">
+        </div>
+
+        <div class="campo">
+            <label for="txtArea">Área de la Planta:</label>
+            <input type="text" id="txtArea" placeholder="Ej: EPP Calidad, Inyección">
+        </div>
+
+        <div class="campo">
+            <label for="txtArticulo">Artículo Entregado:</label>
+            <input type="text" id="txtArticulo" placeholder="Ej: Bata Desechable, Casco, Botas, etc">
+        </div>
+
+        <div class="campo">
+            <label for="txtTalla">Talla / Especificación:</label>
+            <input type="text" id="txtTalla" placeholder="Ej: M, G, Talla 27, Unitalla">
+        </div>
+
+        <h1 style="margin-top: 20px; font-size: 1.2rem;">Firme aquí</h1>
         <canvas id="canvasFirma" width="500" height="250" aria-label="Área para dibujar la firma"></canvas>
+        
         <div class="botones">
-            <button class="btn-limpiar" id="btnLimpiar" type="button">Limpiar</button>
-            <button class="btn-guardar" id="btnGuardar" type="button">Guardar firma</button>
+            <button class="btn-limpiar" id="btnLimpiar" type="button">Limpiar Firma</button>
+            <button class="btn-guardar" id="btnGuardar" type="button">Guardar Registro</button>
         </div>
     </main>
 
@@ -108,6 +156,7 @@
         const btnGuardar = document.getElementById('btnGuardar');
         let dibujando = false;
 
+        // Configuración del trazo de firma
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
@@ -135,7 +184,6 @@
 
         canvas.addEventListener('pointermove', (evento) => {
             if (!dibujando) return;
-
             const { x, y } = obtenerCoordenadas(evento);
             ctx.lineTo(x, y);
             ctx.stroke();
@@ -150,15 +198,62 @@
         canvas.addEventListener('pointercancel', terminarDibujo);
         canvas.addEventListener('lostpointercapture', terminarDibujo);
 
+        // Limpiar el área de dibujo
         btnLimpiar.addEventListener('click', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
 
-        btnGuardar.addEventListener('click', () => {
-            const enlace = document.createElement('a');
-            enlace.href = canvas.toDataURL('image/png');
-            enlace.download = 'firma.png';
-            enlace.click();
+        // Enviar todo al Backend
+        btnGuardar.addEventListener('click', async () => {
+            const nomina = document.getElementById('txtNomina').value.trim();
+            const nombre = document.getElementById('txtNombre').value.trim();
+            const area = document.getElementById('txtArea').value.trim();
+            const articulo = document.getElementById('txtArticulo').value.trim();
+            const talla = document.getElementById('txtTalla').value.trim();
+
+            // Validación simple de campos vacíos
+            if (!nomina || !nombre || !area || !articulo || !talla) {
+                alert('Por favor, rellene todos los campos del formulario antes de continuar.');
+                return;
+            }
+
+            // Convertir la firma del canvas a texto Base64 largo
+            const imagenFirmaBase64 = canvas.toDataURL('image/png');
+
+            const datosResponsiva = {
+                nomina,
+                nombre,
+                area,
+                articulo,
+                talla,
+                firma: imagenFirmaBase64
+            };
+
+            try {
+                const respuesta = await fetch('http://localhost:3000/api/guardar-responsiva', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosResponsiva)
+                });
+
+                const resultado = await respuesta.json();
+
+                if (respuesta.ok) {
+                    alert('¡Registro y firma guardados exitosamente en SQL Server!');
+                    // Limpiar todo el formulario después del éxito
+                    document.getElementById('txtNomina').value = '';
+                    document.getElementById('txtNombre').value = '';
+                    document.getElementById('txtArea').value = '';
+                    document.getElementById('txtArticulo').value = '';
+                    document.getElementById('txtTalla').value = '';
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                } else {
+                    alert('Error en el servidor: ' + resultado.error);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error crítico de red: No se pudo conectar con el servidor Node.js.');
+            }
         });
     </script>
 </body>
