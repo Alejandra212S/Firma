@@ -19,7 +19,7 @@
             color: #222;
             font-family: Arial, sans-serif;
         }
-
+       
         .contenedor {
             width: min(100%, 560px);
             padding: 24px;
@@ -33,6 +33,7 @@
             margin: 0 0 16px;
             font-size: 1.5rem;
         }
+         /* El lienzo donde se dibuja */
 
         canvas {
             display: block;
@@ -92,6 +93,7 @@
 <body>
     <main class="contenedor">
         <h1>Firme aquí</h1>
+        <!-- Definimos el tamaño visual del lienzo -->
         <canvas id="canvasFirma" width="500" height="250" aria-label="Área para dibujar la firma"></canvas>
         <div class="botones">
             <button class="btn-limpiar" id="btnLimpiar" type="button">Limpiar</button>
