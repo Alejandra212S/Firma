@@ -69,7 +69,5 @@ app.post('/api/guardar-responsiva', async (req, res) => {
 // Levantar el servidor local en el puerto 3000
 const PUERTO = 3000;
 app.listen(PUERTO, () => {
-    console.log(`=======================================================`);
     console.log(` Servidor de Planta activo en http://localhost:${PUERTO}`);
-    console.log(`=======================================================`);
 });
