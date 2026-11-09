@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Captura de Firma - Mouse y Pad</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -24,14 +25,12 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        /* El lienzo donde se dibuja */
         canvas {
             border: 2px dashed #ccc;
             border-radius: 4px;
             background-color: #fff;
             cursor: crosshair;
-            /* Evita el scroll o zoom molesto en móviles al usar el pad */
-            touch-action: none; 
+            touch-action: none;
         }
 
         .botones {
@@ -67,117 +66,113 @@
         }
     </style>
 </head>
+
 <body>
 
-<div class="contenedor">
-    <h2>Firme aquí</h2>
-    <!-- Definimos el tamaño visual del lienzo -->
-    <canvas id="canvasFirma" width="500" height="250"></canvas>
-    
-    <div class="botones">
-        <button class="btn-limpiar" id="btnLimpiar">Limpiar</button>
-        <button class="btn-guardar" id="btnGuardar">Guardar Firma</button>
+    <div class="contenedor">
+        <h2>Firme aquí</h2>
+
+        <canvas id="canvasFirma" width="500" height="250"></canvas>
+
+        <div class="botones">
+            <button class="btn-limpiar" id="btnLimpiar">Limpiar</button>
+            <button class="btn-guardar" id="btnGuardar">Guardar Firma</button>
+        </div>
     </div>
-</div>
 
-<script>
-    const canvas = document.getElementById('canvasFirma');
-    const ctx = canvas.getContext('2d');
-    const btnLimpiar = document.getElementById('btnLimpiar');
-    const btnGuardar = document.getElementById('btnGuardar');
+    <script>
+        const canvas = document.getElementById('canvasFirma');
+        const ctx = canvas.getContext('2d');
+        const btnLimpiar = document.getElementById('btnLimpiar');
+        const btnGuardar = document.getElementById('btnGuardar');
 
-    let dibujando = false;
+        let dibujando = false;
 
-    // Configuración del trazo de la firma
-    ctx.strokeStyle = '#000000'; // Color negro
-    ctx.lineWidth = 3;           // Grosor de la línea
-    ctx.lineCap = 'round';       // Bordes redondeados para que se vea natural
-    ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
-    // --- FUNCIONES DE DIBUJO ---
+        function comenzarDibujo(x, y) {
+            dibujando = true;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
 
-    function comenzarDibujo(x, y) {
-        dibujando = true;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-    }
+        function dibujar(x, y) {
+            if (!dibujando) return;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
 
-    function dibujar(x, y) {
-        if (!dibujando) return;
-        ctx.lineTo(x, y);
-        ctx.stroke();
-    }
+        function terminarDibujo() {
+            dibujando = false;
+            ctx.closePath();
+        }
 
-    function terminarDibujo() {
-        dibujando = false;
-        ctx.closePath();
-    }
+        function obtenerCoordenadas(e) {
+            const rect = canvas.getBoundingClientRect();
 
-    // --- OBTENER COORDENADAS PRECISAS ---
+            const clienteX = e.touches
+                ? e.touches[0].clientX
+                : e.clientX;
 
-    // Obtiene la posición exacta dentro del canvas restando los bordes de la pantalla
-    function obtenerCoordenadas(e) {
-        const rect = canvas.getBoundingClientRect();
-        
-        // Si es un evento táctil (pad/pantalla) usa el primer toque, si no usa el mouse
-        const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
+            const clienteY = e.touches
+                ? e.touches[0].clientY
+                : e.clientY;
 
-        return {
-            x: clienteX - rect.left,
-            y: clienteY - rect.top
-        };
-    }
+            return {
+                x: clienteX - rect.left,
+                y: clienteY - rect.top
+            };
+        }
 
-    // --- COMPATIBILIDAD CON MOUSE ---
+        /* Mouse */
 
-    canvas.addEventListener('mousedown', (e) => {
-        const coords = obtenerCoordenadas(e);
-        comenzarDibujo(coords.x, coords.y);
-    });
+        canvas.addEventListener('mousedown', (e) => {
+            const coords = obtenerCoordenadas(e);
+            comenzarDibujo(coords.x, coords.y);
+        });
 
-    canvas.addEventListener('mousemove', (e) => {
-        const coords = obtenerCoordenadas(e);
-        dibujar(coords.x, coords.y);
-    });
+        canvas.addEventListener('mousemove', (e) => {
+            const coords = obtenerCoordenadas(e);
+            dibujar(coords.x, coords.y);
+        });
 
-    window.addEventListener('mouseup', terminarDibujo);
+        window.addEventListener('mouseup', terminarDibujo);
 
-    // --- COMPATIBILIDAD CON PAD / PANTALLA TÁCTIL ---
+        /* Táctil */
 
-    canvas.addEventListener('touchstart', (e) => {
-        const coords = obtenerCoordenadas(e);
-        comenzarDibujo(coords.x, coords.y);
-    });
+        canvas.addEventListener('touchstart', (e) => {
+            const coords = obtenerCoordenadas(e);
+            comenzarDibujo(coords.x, coords.y);
+        });
 
-    canvas.addEventListener('touchmove', (e) => {
-        // Evita que la pantalla se mueva mientras firmas
-        e.preventDefault(); 
-        const coords = obtenerCoordenadas(e);
-        dibujar(coords.x, coords.y);
-    }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const coords = obtenerCoordenadas(e);
+            dibujar(coords.x, coords.y);
+        }, { passive: false });
 
-    window.addEventListener('touchend', terminarDibujo);
+        window.addEventListener('touchend', terminarDibujo);
 
-    // --- BOTONES DE ACCIÓN ---
+        /* Limpiar */
 
-    // Limpia todo el lienzo
-    btnLimpiar.addEventListener('click', () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    });
+        btnLimpiar.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
 
-    // Guarda y descarga la firma en formato PNG
-    btnGuardar.addEventListener('click', () => {
-        // Convierte el lienzo a una URL de imagen codificada en Base64
-        const urlImagen = canvas.toDataURL('image/png');
-        
-        // Creamos un enlace invisible para forzar la descarga
-        const enlace = document.createElement('a');
-        enlace.href = urlImagen;
-        enlace.download = 'firma.png'; // Nombre del archivo descargado
-        enlace.click();
-    });
-</script>
+        /* Guardar */
+
+        btnGuardar.addEventListener('click', () => {
+            const urlImagen = canvas.toDataURL('image/png');
+
+            const enlace = document.createElement('a');
+            enlace.href = urlImagen;
+            enlace.download = 'firma.png';
+            enlace.click();
+        });
+    </script>
 
 </body>
 </html>
